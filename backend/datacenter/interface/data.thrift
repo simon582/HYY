@@ -7,7 +7,13 @@ struct HyySearchRequest
 }
 
 
-//////// Reponse
+//////// Response
+/*
+    正文格式:
+    <p>段落1</p>
+    <img src="aaa.jpg"/>
+    <p>段落2</p>
+*/
 
 struct HyyDoc
 {
