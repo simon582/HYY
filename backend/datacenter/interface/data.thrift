@@ -23,8 +23,9 @@ struct HyyDoc
     4:optional string datetime,     // 时间YYYY-mm-dd HH:MM:SS
     5:optional string source,       // 来源
     6:optional string text,         // 正文
-    7:optional string source_icon,  // 来源icon
-    8:optional string source_desc,  // 来源描述
+    7:optional string short_text,   // 摘要
+    8:optional string source_icon,  // 来源icon
+    9:optional string source_desc,  // 来源描述
 }
 
 struct HyySearchResponse
