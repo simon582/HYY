@@ -43,7 +43,7 @@ class HYYSearcher(object):
        
         if query.find('query=') != -1:
             keyword = query.split('query')[1]
-            return _get_query(keyword) 
+            return self._get_query(keyword) 
 
     def GetSearchResult(self, hyy_search_request):
 
