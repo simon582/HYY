@@ -1,8 +1,4 @@
 # -*- coding:utf-8 -*-
-# Copyright: Zhejiang Tachao Technology Inc.
-# Author: Shao Xinqi
-# Date: 2016-07-20
-# Description: start SDE via thrift
 
 import traceback
 import sys
@@ -14,7 +10,6 @@ import socket
 sys.path.append('./gen-py/')
 sys.path.append('./base/')
 
-from utils import WriteLog
 from data import HyySearchService
 from data import ttypes
 from data import constants
