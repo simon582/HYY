@@ -29,7 +29,7 @@ print 'create client successfully'
 
 request = ttypes.HyySearchRequest()
 request.qid = '123'
-request.data = 'cat=123&query=胃病'
+request.data = 'query=肚子疼'
 try:
     response = client.GetSearchResult(request)
     print response.qid

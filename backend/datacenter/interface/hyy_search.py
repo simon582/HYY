@@ -12,9 +12,11 @@ import socket
 import traceback
 sys.path.append('./gen-py/')
 sys.path.append('./base/')
+sys.path.append('../spider/dxy/')
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+import dxy_search
 from utils import WriteLog
 from data import HyySearchService
 from data import ttypes
@@ -27,7 +29,7 @@ class HYYSearcher(object):
         pass
 
     def _get_query(self, keyword):
-
+        '''
         doc = ttypes.HyyDoc()
         doc.doc_id = '123'
         doc.title = '肚子疼怎么回事'
@@ -38,6 +40,8 @@ class HYYSearcher(object):
         doc.source_desc = '百度知道'
         doc.text = open('mock.txt').read().strip()
         return [doc, doc, doc, doc]
+        '''
+        return dxy_search.query(keyword)
     
     def _get_result(self, query):
        
