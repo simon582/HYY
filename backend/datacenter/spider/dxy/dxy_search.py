@@ -7,6 +7,7 @@ import urllib
 import urllib2
 import cookielib
 import hashlib
+import copy
 import sys
 sys.path.append('../../interface/gen-py/')
 from data import ttypes
@@ -77,11 +78,11 @@ def query(keyword):
     if len(div_list) == 0:
         return []
     for div in div_list:
-        if len(doc_list) > 3:
+        if len(doc_list) > 2:
             break
-        doc = ttypes.HyyDoc()
+        doc = copy.copy(ttypes.HyyDoc())
         t_list = div.xpath('./h3/a/text()|./h3/a/em/text()')
-        doc.title = ''.join([t.extract() for t in t_list])
+        doc.title = ''.join([t.extract() for t in t_list]).encode('utf-8')
         #print 'title:' + doc.title
         url = div.xpath('./h3/a/@href')[0].extract()
         #print 'url:' + url
@@ -97,9 +98,12 @@ def query(keyword):
                 doc.datetime = t.strip()
         #print 'datetime:' + doc.datetime
         doc.doc_id = hashlib.md5(url).hexdigest()
-        doc.text = GetDetail(url)
+        doc.text = GetDetail(url).encode('utf-8')
         #print 'text:' + doc.text
-        doc_list.append(doc)    
+        if doc.doc_id == None:
+            continue
+        doc_list.append(doc)
+    print doc_list   
     return doc_list
 
 if __name__ == "__main__":

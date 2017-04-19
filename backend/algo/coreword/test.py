@@ -7,10 +7,12 @@ import time
 import json
 import copy
 import socket
+reload(sys)
+sys.setdefaultencoding('utf-8')
 sys.path.append('./gen-py/')
 sys.path.append('./base/')
 
-from data import HyySearchService
+from data import CoreQueryService
 from data import ttypes
 from data import constants
 
@@ -20,23 +22,21 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-transport = TSocket.TSocket('101.200.175.121', 8080)
+transport = TSocket.TSocket('101.200.175.121', 9090)
 transport = TTransport.TBufferedTransport(transport)
 protocol = TBinaryProtocol.TBinaryProtocol(transport)
-client = HyySearchService.Client(protocol)
+client = CoreQueryService.Client(protocol)
 transport.open()
 print 'create client successfully'
 
-request = ttypes.HyySearchRequest()
+request = ttypes.CoreQueryRequest()
 request.qid = '123'
-request.data = 'query=肚子疼'
+request.data = '口腔上颚烂了'
 try:
-    response = client.GetSearchResult(request)
-    print response.qid
-    print len(response.doc_list)
-    for doc in response.doc_list:
-        print doc.doc_id
-        print doc.title
+    response = client.GetCoreWords(request)
+    print 'qid:' + response.qid
+    for word in response.word_list:
+        print word
 except:
     print 'refused'
     traceback.print_exc()

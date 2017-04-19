@@ -1,8 +1,4 @@
 # -*- coding:utf-8 -*-
-# Copyright: Zhejiang Tachao Technology Inc.
-# Author: Shao Xinqi
-# Date: 2016-07-20
-# Description: simple decision engine
 
 import sys
 import datetime
@@ -41,7 +37,9 @@ class HYYSearcher(object):
         doc.text = open('mock.txt').read().strip()
         return [doc, doc, doc, doc]
         '''
-        return dxy_search.query(keyword)
+        doc_list = dxy_search.query(keyword)
+        WriteLog('NOTICE', 'query size:%d' % len(doc_list))
+        return doc_list
     
     def _get_result(self, query):
        
