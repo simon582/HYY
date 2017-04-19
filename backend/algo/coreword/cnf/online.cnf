@@ -3,3 +3,4 @@ mysql_host=112.126.81.241
 mysql_user=hemed
 mysql_passwd=hemed@_123
 mysql_db=hys
+stopword_path=./cnf/stopwords.txt

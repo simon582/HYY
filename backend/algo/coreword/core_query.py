@@ -25,6 +25,14 @@ class CoreQueryer(object):
         jieba.initialize()
         self.textrank = analyse.textrank
         self.cursor = self.create_connection(cnf_dict)
+        self.stopwords = self._get_stopwords(cnf_dict)
+
+    def _get_stopwords(self, cnf_dict):
+
+        stopwords = set()
+        for line in open(cnf_dict['stopword_path']):
+            stopwords.add(line.strip())
+        return stopwords
 
     def create_connection(self, cnf_dict):
         
@@ -39,7 +47,7 @@ class CoreQueryer(object):
 
     def _utf8(self, word_list):
 
-        return [w.encode('utf-8') for w in word_list]
+        return [w.encode('utf-8') for w in word_list if len(w) > 1]
 
     def _get_mapping(self):
         
@@ -73,7 +81,7 @@ class CoreQueryer(object):
         type_words = jieba.posseg.cut(query)
         n_list = self._utf8([w.word for w in type_words if 'n' in w.flag or 'v' in w.flag])
         print 'nous:' + '|'.join(n_list)
-        return list(set(word_list + tr_list + tag_list + n_list))
+        return list(set(word_list + tr_list + tag_list + n_list) - self.stopwords)
 
     def GetCoreWords(self, core_query_request):
 

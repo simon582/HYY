@@ -31,12 +31,12 @@ print 'create client successfully'
 
 request = ttypes.CoreQueryRequest()
 request.qid = '123'
-request.data = '口腔上颚烂了'
+request.data = '头疼吃什么药好'
+print 'query:' + request.data
 try:
     response = client.GetCoreWords(request)
     print 'qid:' + response.qid
-    for word in response.word_list:
-        print word
+    print 'core:' + '|'.join(response.word_list)
 except:
     print 'refused'
     traceback.print_exc()
