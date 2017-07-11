@@ -1,6 +1,6 @@
 thrift_server=101.200.175.121:9090
 mysql_host=112.126.81.241
-mysql_user=hemed
-mysql_passwd=hemed@_123
-mysql_db=hys
+mysql_user=hemed_user
+mysql_passwd=hemed@_2o17
+mysql_db=hemed
 stopword_path=./cnf/stopwords.txt

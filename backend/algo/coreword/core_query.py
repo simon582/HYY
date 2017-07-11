@@ -7,6 +7,7 @@ import json
 import socket
 import traceback
 import MySQLdb
+import re
 import jieba
 from jieba import analyse
 sys.path.append('./gen-py/')
@@ -24,6 +25,7 @@ class CoreQueryer(object):
         
         jieba.initialize()
         self.textrank = analyse.textrank
+        self.cnf_dict = cnf_dict
         self.cursor = self.create_connection(cnf_dict)
         self.stopwords = self._get_stopwords(cnf_dict)
 
@@ -64,11 +66,101 @@ class CoreQueryer(object):
             WriteLog('WARN', 'MySQL query error: %d: %s' % (e.args[0], e.args[1]))
         return map_dict 
         
-        
+    def _get_distinguish(self):
+
+        dist_dict = {}
+        try:
+            cnt = self.cursor.execute('select word,result from word_distinguish')
+            results = self.cursor.fetchall()
+            for row in results:
+                if not row[0] in dist_dict:
+                    dist_dict[row[0]] = [row[1]]
+                else:
+                    dist_dict[row[0]].append(row[1])
+        except MySQLdb.Error, e:
+            WriteLog('WARN', 'MySQL query error: %d: %s' % (e.args[0]. e.args[1]))
+        return dist_dict
+ 
+    def _find_distinguish(self, query, dist_dict, word_list):
+
+        for pattern, results in dist_dict.items():
+            p = re.compile(pattern.encode('utf-8'))
+            match = re.search(p, query)
+            if match:
+                if len(results) == 1 and pattern == results[0]:
+                    word_list.append(match.group())
+                else:
+                    word_list += results
+                query = p.sub('', query)
+        return query
+
+    def _add_word(self, word_list, word):
+
+        existed = False
+        word = word.encode('utf-8')
+        for word_set in word_list:
+            if word in word_set:
+                existed = True
+                break
+        if not existed:
+            word_list.append([word])
+
+    def _add_pro(self, word_list, nik, pro):
+
+        existed = False
+        nik = nik.encode('utf-8')
+        pro = self._utf8(pro)
+        for sub_list in word_list:
+            if nik in sub_list:
+                sub_list += pro
+                break
+        if not existed:
+            word_list.append(pro+[nik])
+
     def _get_result(self, query):
 
         word_list = []
+        self.cursor = self.create_connection(self.cnf_dict)
         map_dict = self._get_mapping()
+        dist_dict = self._get_distinguish()
+
+        temp_list = []
+        query = self._find_distinguish(query, dist_dict, temp_list)
+        for w in temp_list:
+            word_list.append(w.encode('utf-8'))
+        for nik, pro in map_dict.items():
+            if nik in query:
+                self._add_pro(word_list, nik, pro)
+
+        temp_list = []        
+        tr_list = self._utf8(self.textrank(query))
+        print 'textrank:' + '|'.join(tr_list)
+        tag_list = self._utf8(analyse.extract_tags(query, topK=3))
+        print 'TF-IDF:' + '|'.join(tag_list)
+        type_words = jieba.posseg.cut(query)
+        n_list = self._utf8([w.word for w in type_words if 'n' in w.flag or 'v' in w.flag])
+        print 'nous:' + '|'.join(n_list)
+        sum_list = list(set(temp_list + tr_list + tag_list + n_list) - self.stopwords)
+        for w in sum_list:
+            self._add_word(word_list, w)
+        
+        res_list = []
+        for word_set in word_list:
+            res_list.append('|'.join(list(word_set)))
+        print res_list
+        return res_list
+
+    '''
+    def _get_result(self, query):
+        
+        word_list = []
+        self.cursor = self.create_connection(self.cnf_dict)
+        map_dict = self._get_mapping()
+        dist_dict = self._get_distinguish()
+
+        query = self._find_distinguish(query, dist_dict, word_list)
+        print 'distinguish:' + '|'.join(word_list)
+
         for nik, pro in map_dict.items():
             if nik in query:
                 word_list += pro
@@ -82,6 +174,7 @@ class CoreQueryer(object):
         n_list = self._utf8([w.word for w in type_words if 'n' in w.flag or 'v' in w.flag])
         print 'nous:' + '|'.join(n_list)
         return list(set(word_list + tr_list + tag_list + n_list) - self.stopwords)
+    '''
 
     def GetCoreWords(self, core_query_request):
 
@@ -89,7 +182,8 @@ class CoreQueryer(object):
             core_query_response = ttypes.CoreQueryResponse()
             core_query_response.qid = core_query_request.qid
             core_query_response.word_list = self._get_result(core_query_request.data)
-            WriteLog('NOTICE', 'qid:%s, data:%s' % (core_query_request.qid, core_query_request.data))
+            WriteLog('NOTICE', 'qid:%s, query:%s, core:%s' % (core_query_request.qid, core_query_request.data,
+                                                              '|'.join(core_query_response.word_list)))
             return core_query_response
         except:
             traceback.print_exc()
