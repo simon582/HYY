@@ -127,7 +127,7 @@ class CoreQueryer(object):
         temp_list = []
         query = self._find_distinguish(query, dist_dict, temp_list)
         for w in temp_list:
-            word_list.append(w.encode('utf-8'))
+            word_list.append([w.encode('utf-8')])
         for nik, pro in map_dict.items():
             if nik in query:
                 self._add_pro(word_list, nik, pro)
