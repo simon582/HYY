@@ -31,7 +31,7 @@ print 'create client successfully'
 
 request = ttypes.CoreQueryRequest()
 request.qid = '123'
-request.data = '红斑 肚子疼'
+request.data = '脸上有红斑、关节疼会是什么疾病？'
 print 'query:' + request.data
 try:
     response = client.GetCoreWords(request)

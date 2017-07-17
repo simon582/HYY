@@ -113,6 +113,7 @@ class CoreQueryer(object):
         for sub_list in word_list:
             if nik in sub_list:
                 sub_list += pro
+                existed = True
                 break
         if not existed:
             word_list.append(pro+[nik])
@@ -128,6 +129,9 @@ class CoreQueryer(object):
         query = self._find_distinguish(query, dist_dict, temp_list)
         for w in temp_list:
             word_list.append([w.encode('utf-8')])
+            w = w.decode('utf-8')
+            if w in map_dict:
+                self._add_pro(word_list, w, map_dict[w])
         for nik, pro in map_dict.items():
             if nik in query:
                 self._add_pro(word_list, nik, pro)
