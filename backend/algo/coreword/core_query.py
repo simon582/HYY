@@ -78,9 +78,21 @@ class CoreQueryer(object):
                 else:
                     dist_dict[row[0]].append(row[1])
         except MySQLdb.Error, e:
-            WriteLog('WARN', 'MySQL query error: %d: %s' % (e.args[0]. e.args[1]))
+            WriteLog('WARN', 'MySQL query error: %d: %s' % (e.args[0], e.args[1]))
         return dist_dict
- 
+
+    def _get_search_index(self):
+
+        index_dict = {}
+        try:
+            cnt = self.cursor.execute('select field_name,value from search_index')
+            results = self.cursor.fetchall()
+            for row in results:
+                index_dict[row[1].encode('utf-8')] = row[0]
+        except MySQLdb.Error, e:
+            WriteLog('WARN', 'MySQL query error: %d: %s' % (e.args[0], e.args[1]))
+        return index_dict
+
     def _find_distinguish(self, query, dist_dict, word_list):
 
         for pattern, results in dist_dict.items():
@@ -124,6 +136,7 @@ class CoreQueryer(object):
         self.cursor = self.create_connection(self.cnf_dict)
         map_dict = self._get_mapping()
         dist_dict = self._get_distinguish()
+        index_dict = self._get_search_index()
 
         temp_list = []
         query = self._find_distinguish(query, dist_dict, temp_list)
@@ -147,10 +160,17 @@ class CoreQueryer(object):
         sum_list = list(set(temp_list + tr_list + tag_list + n_list) - self.stopwords)
         for w in sum_list:
             self._add_word(word_list, w)
-        
+       
+        for word_set in word_list:
+            for i in range(len(word_set)):
+                if word_set[i] in index_dict:
+                    word_set[i] += '&' + index_dict[word_set[i]]
+                else:
+                    word_set[i] += '&null'
+ 
         res_list = []
         for word_set in word_list:
-            res_list.append('|'.join(list(word_set)))
+            res_list.append('|'.join(word_set))
         print res_list
         return res_list
 

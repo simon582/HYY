@@ -31,14 +31,12 @@ print 'create client successfully'
 
 request = ttypes.CoreQueryRequest()
 request.qid = '123'
-request.data = '脸上有红斑、关节疼会是什么疾病？'
+request.data = '关节炎怎么治？'
+#request.data = '抗dsDNA抗体阳性病因'
+#request.data = '脸上有红斑、关节疼会是什么疾病？'
 print 'query:' + request.data
-try:
-    response = client.GetCoreWords(request)
-    print 'qid:' + response.qid
-    print 'core:' + ','.join(response.word_list)
-except:
-    print 'refused'
-    traceback.print_exc()
+response = client.GetCoreWords(request)
+print 'qid:' + response.qid
+print 'core:' + ','.join(response.word_list)
 
 transport.close()
