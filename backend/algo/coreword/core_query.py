@@ -88,7 +88,10 @@ class CoreQueryer(object):
             cnt = self.cursor.execute('select field_name,value from search_index')
             results = self.cursor.fetchall()
             for row in results:
-                index_dict[row[1].encode('utf-8')] = row[0]
+                try:
+                    index_dict[row[1].encode('utf-8')] = row[0].enocde('utf-8')
+                except:
+                    pass
         except MySQLdb.Error, e:
             WriteLog('WARN', 'MySQL query error: %d: %s' % (e.args[0], e.args[1]))
         return index_dict
@@ -96,14 +99,17 @@ class CoreQueryer(object):
     def _find_distinguish(self, query, dist_dict, word_list):
 
         for pattern, results in dist_dict.items():
-            p = re.compile(pattern.encode('utf-8'))
-            match = re.search(p, query)
-            if match:
-                if len(results) == 1 and pattern == results[0]:
-                    word_list.append(match.group())
-                else:
-                    word_list += results
-                query = p.sub('', query)
+            try:
+                p = re.compile(pattern.encode('utf-8'))
+                match = re.search(p, query)
+                if match:
+                    if len(results) == 1 and pattern == results[0]:
+                        word_list.append(match.group())
+                    else:
+                        word_list += results
+                    query = p.sub('', query)
+            except:
+                WriteLog('WARN', 'Cannot analyze pattern:%s' % pattern)
         return query
 
     def _add_word(self, word_list, word):
@@ -136,7 +142,7 @@ class CoreQueryer(object):
         self.cursor = self.create_connection(self.cnf_dict)
         map_dict = self._get_mapping()
         dist_dict = self._get_distinguish()
-        index_dict = self._get_search_index()
+        #index_dict = self._get_search_index()
 
         temp_list = []
         query = self._find_distinguish(query, dist_dict, temp_list)
@@ -161,17 +167,20 @@ class CoreQueryer(object):
         for w in sum_list:
             self._add_word(word_list, w)
        
+        ''' 
         for word_set in word_list:
             for i in range(len(word_set)):
                 if word_set[i] in index_dict:
                     word_set[i] += '&' + index_dict[word_set[i]]
                 else:
                     word_set[i] += '&null'
- 
+        '''
+
         res_list = []
         for word_set in word_list:
             res_list.append('|'.join(word_set))
         print res_list
+        #import pdb;pdb.set_trace()
         return res_list
 
     '''
