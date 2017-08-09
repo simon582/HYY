@@ -9,10 +9,12 @@ import traceback
 sys.path.append('./gen-py/')
 sys.path.append('./base/')
 sys.path.append('../spider/dxy/')
+sys.path.append('../spider/baidu/')
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
 import dxy_search
+import baidu_search
 from utils import WriteLog
 from data import HyySearchService
 from data import ttypes
@@ -24,7 +26,7 @@ class HYYSearcher(object):
 
         pass
 
-    def _get_query(self, keyword):
+    def _get_query(self, query_dict):
         '''
         doc = ttypes.HyyDoc()
         doc.doc_id = '123'
@@ -37,15 +39,27 @@ class HYYSearcher(object):
         doc.text = open('mock.txt').read().strip()
         return [doc, doc, doc, doc]
         '''
-        doc_list = dxy_search.query(keyword)
+        #doc_list = dxy_search.query(keyword)
+        if 'site' in query_dict:
+            if query_dict['site'] == 'baidu':
+                doc_list = baidu_search.query(query_dict)
         WriteLog('NOTICE', 'query size:%d' % len(doc_list))
         return doc_list
     
     def _get_result(self, query):
-       
+        '''
         if query.find('query=') != -1:
             keyword = query.split('query')[1]
             return self._get_query(keyword) 
+        '''
+        parts = query.split('&')
+        query_dict = {}
+        for p in parts:
+            k, v = p.split('=')
+            query_dict[k] = v
+        if not 'page' in query_dict:
+            query_dict['page'] = 1
+        return self._get_query(query_dict)
 
     def GetSearchResult(self, hyy_search_request):
 

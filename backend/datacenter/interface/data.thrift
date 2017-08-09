@@ -26,6 +26,7 @@ struct HyyDoc
     7:optional string short_text,   // 摘要
     8:optional string source_icon,  // 来源icon
     9:optional string source_desc,  // 来源描述
+    10:optional string detail_url,  // 详情页URL
 }
 
 struct HyySearchResponse
