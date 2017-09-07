@@ -55,22 +55,47 @@ class CoreQueryer(object):
         
         map_dict = {}
         try:
-            cnt = self.cursor.execute('select folknik,pro from professional')
+            cnt = self.cursor.execute('select synonym from synonym')
             results = self.cursor.fetchall()
             for row in results:
+                '''
                 if not row[0] in map_dict:
                     map_dict[row[0]] = [row[1]]
                 else:
                     map_dict[row[0]].append(row[1])
+                '''
+                items = row[0].strip().split('|')
+                for i in range(len(items)):
+                    for j in range(len(items)):
+                        if i == j:
+                            continue
+                        if not items[i] in map_dict:
+                            map_dict[items[i]] = [items[j]]
+                        else:
+                            map_dict[items[i]].append(items[j])
         except MySQLdb.Error, e:
             WriteLog('WARN', 'MySQL query error: %d: %s' % (e.args[0], e.args[1]))
+        
+        try:
+            cnt = self.cursor.execute('select word, result from word_distinguish where type=10')
+            results = self.cursor.fetchall()
+            for row in results:
+                word = row[0]
+                result = row[1].strip().split('|')
+                if not word in map_dict:
+                    map_dict[word] = result
+                else:
+                    map_dict[word] += result
+        except MySQLdb.Error, e:
+            WriteLog('WARN', 'MySQL query error: %d: %s' % (e.args[0], e.args[1]))
+
         return map_dict 
         
     def _get_distinguish(self):
 
         dist_dict = {}
         try:
-            cnt = self.cursor.execute('select word,result from word_distinguish')
+            cnt = self.cursor.execute('select word,result from word_distinguish where type<>10')
             results = self.cursor.fetchall()
             for row in results:
                 if not row[0] in dist_dict:
@@ -79,7 +104,9 @@ class CoreQueryer(object):
                     dist_dict[row[0]].append(row[1])
         except MySQLdb.Error, e:
             WriteLog('WARN', 'MySQL query error: %d: %s' % (e.args[0], e.args[1]))
-        return dist_dict
+        pattern_list = dist_dict.keys()
+        pattern_list.sort(key=lambda x:len(x), reverse=True)
+        return dist_dict, pattern_list
 
     def _get_search_index(self):
 
@@ -96,9 +123,10 @@ class CoreQueryer(object):
             WriteLog('WARN', 'MySQL query error: %d: %s' % (e.args[0], e.args[1]))
         return index_dict
 
-    def _find_distinguish(self, query, dist_dict, word_list):
+    def _find_distinguish(self, query, dist_dict, pattern_list, word_list):
 
-        for pattern, results in dist_dict.items():
+        for pattern in pattern_list:
+            results = dist_dict[pattern]
             try:
                 p = re.compile(pattern.encode('utf-8'))
                 match = re.search(p, query)
@@ -136,16 +164,23 @@ class CoreQueryer(object):
         if not existed:
             word_list.append(pro+[nik])
 
+    def _pre_process(self, query):
+
+        query = query.replace('（', '(')
+        query = query.replace('）', ')')
+        return query
+
     def _get_result(self, query):
 
+        query = self._pre_process(query)
         word_list = []
         self.cursor = self.create_connection(self.cnf_dict)
         map_dict = self._get_mapping()
-        dist_dict = self._get_distinguish()
+        dist_dict, pattern_list = self._get_distinguish()
         #index_dict = self._get_search_index()
 
         temp_list = []
-        query = self._find_distinguish(query, dist_dict, temp_list)
+        query = self._find_distinguish(query, dist_dict, pattern_list, temp_list)
         for w in temp_list:
             word_list.append([w.encode('utf-8')])
             w = w.decode('utf-8')

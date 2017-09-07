@@ -31,8 +31,11 @@ print 'create client successfully'
 
 request = ttypes.CoreQueryRequest()
 request.qid = '123'
-request.data = 'anca(+)'
-#request.data = '肚子痛会是什么疾病呢'
+#request.data = 'anca(+)'
+request.data = '红斑'
+#request.data = '带状疱疹存在哪些虚假医疗或过度诊疗的现象'
+#request.data = '克罗恩病存在哪些虚假医疗或过度诊疗的现象'
+#request.data = '拉肚子会是什么疾病呢'
 #request.data = '抗dsDNA抗体阳性病因'
 #request.data = '脸上有红斑、关节疼会是什么疾病？'
 print 'query:' + request.data
