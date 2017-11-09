@@ -20,8 +20,8 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-#transport = TSocket.TSocket('101.200.175.121', 8080)
-transport = TSocket.TSocket('127.0.0.1', 8080)
+transport = TSocket.TSocket('101.200.175.121', 8080)
+#transport = TSocket.TSocket('127.0.0.1', 8080)
 transport = TTransport.TBufferedTransport(transport)
 protocol = TBinaryProtocol.TBinaryProtocol(transport)
 client = HyySearchService.Client(protocol)
@@ -30,14 +30,16 @@ print 'create client successfully'
 
 request = ttypes.HyySearchRequest()
 request.qid = '123'
-request.data = 'query=网络安全法&site=baidu&page=1'
+request.data = 'query=医疗器械'
 try:
     response = client.GetSearchResult(request)
     print response.qid
-    print len(response.doc_list)
+    print 'size:', len(response.doc_list)
     for doc in response.doc_list:
         print doc.doc_id
         print doc.title
+        print doc.detail_url
+        print '-----------------'
 except:
     print 'refused'
     traceback.print_exc()

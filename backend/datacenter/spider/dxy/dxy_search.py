@@ -78,7 +78,7 @@ def query(keyword):
     if len(div_list) == 0:
         return []
     for div in div_list:
-        if len(doc_list) > 2:
+        if len(doc_list) > 7:
             break
         doc = copy.copy(ttypes.HyyDoc())
         t_list = div.xpath('./h3/a/text()|./h3/a/em/text()')
@@ -86,6 +86,7 @@ def query(keyword):
         #print 'title:' + doc.title
         url = div.xpath('./h3/a/@href')[0].extract()
         #print 'url:' + url
+        doc.detail_url = url
         doc.source = '丁香园'
         doc.source_desc = '丁香医生'
         doc.source_icon = 'http://assets.dxycdn.com/app/dxy/img/logo@2x2.png'
@@ -103,7 +104,7 @@ def query(keyword):
         if doc.doc_id == None:
             continue
         doc_list.append(doc)
-    print doc_list   
+    #print doc_list   
     return doc_list
 
 if __name__ == "__main__":

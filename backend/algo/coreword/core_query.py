@@ -54,6 +54,7 @@ class CoreQueryer(object):
     def _get_mapping(self):
         
         map_dict = {}
+        # 同义词处理
         try:
             cnt = self.cursor.execute('select synonym from synonym')
             results = self.cursor.fetchall()
@@ -76,16 +77,21 @@ class CoreQueryer(object):
         except MySQLdb.Error, e:
             WriteLog('WARN', 'MySQL query error: %d: %s' % (e.args[0], e.args[1]))
         
+        # 主从词处理
         try:
             cnt = self.cursor.execute('select word, result from word_distinguish where type=10')
             results = self.cursor.fetchall()
             for row in results:
-                word = row[0]
+                main_word = row[0]
                 result = row[1].strip().split('|')
-                if not word in map_dict:
-                    map_dict[word] = result
-                else:
-                    map_dict[word] += result
+                for sub_word in result:
+                    if not main_word in map_dict:
+                        map_dict[main_word] = [sub_word]
+                    else:
+                        map_dict[main_word].append(sub_word)
+                    # 针对每个从词再做一次同义词释义
+                    if sub_word in map_dict:
+                        map_dict[main_word] += map_dict[sub_word]
         except MySQLdb.Error, e:
             WriteLog('WARN', 'MySQL query error: %d: %s' % (e.args[0], e.args[1]))
 

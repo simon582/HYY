@@ -6,6 +6,11 @@ import time
 import json
 import socket
 import traceback
+import random
+import copy
+import jieba
+from jieba import analyse
+import pymongo
 sys.path.append('./gen-py/')
 sys.path.append('./base/')
 sys.path.append('../spider/dxy/')
@@ -14,7 +19,6 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 import dxy_search
-import baidu_search
 from utils import WriteLog
 from data import HyySearchService
 from data import ttypes
@@ -24,7 +28,58 @@ class HYYSearcher(object):
 
     def __init__(self):
 
-        pass
+        try:
+            jieba.initialize()
+        except Exception as e:
+            print e
+            exit(-1)
+        try:
+            self.mongo_conn = pymongo.MongoClient()
+            self.hyy_db = self.mongo_conn['hyy']
+        except Exception as e:
+            print e
+            exit(-1)
+
+    def _get_words(self, query):
+
+        type_words = jieba.posseg.cut(query)
+        w_list = [w.word for w in type_words if len(w.word) > 1 and ('n' in w.flag or 'v' in w.flag)]
+        return w_list
+
+    def _get_doc_from_index(self, word_list, topN=50):
+
+        stat_doc = {}
+        for word in word_list:
+            prod = self.hyy_db.index.find_one({'prefix':word})
+            if not prod:
+                continue
+            for doc in prod['doc_list']:
+                doc_id = doc[0]
+                doc_cnt = doc[1]
+                if doc_id in stat_doc:
+                    stat_doc[doc_id] += doc_cnt
+                else:
+                    stat_doc[doc_id] = doc_cnt
+        doc_list = sorted(stat_doc.iteritems(), key=lambda d:d[1], reverse=True)
+        top_list = []
+        rest_list = [] 
+        for doc_id, cnt in doc_list[:topN]:
+            hyy_doc = copy.copy(ttypes.HyyDoc())
+            prod = self.hyy_db.work.find_one({'doc_id':doc_id})
+            hyy_doc.title = prod['title'].encode('utf-8')
+            hyy_doc.doc_id = prod['doc_id']
+            hyy_doc.author = prod['author']
+            hyy_doc.datetime = prod['datetime']
+            hyy_doc.source = prod['source']
+            hyy_doc.source_icon = prod['source_icon']
+            hyy_doc.source_desc = prod['source_desc']
+            hyy_doc.detail_url = prod['detail_url']
+            hyy_doc.text = prod['text'].encode('utf-8')
+            if stat_doc[prod['doc_id']] >= 100:
+                top_list.append(hyy_doc)
+            else:
+                rest_list.append(hyy_doc)
+        return top_list, rest_list
 
     def _get_query(self, query_dict):
         '''
@@ -39,13 +94,13 @@ class HYYSearcher(object):
         doc.text = open('mock.txt').read().strip()
         return [doc, doc, doc, doc]
         '''
-        #doc_list = dxy_search.query(keyword)
-        if 'site' in query_dict:
-            if query_dict['site'] == 'baidu':
-                doc_list = baidu_search.query(query_dict)
-        WriteLog('NOTICE', 'query size:%d' % len(doc_list))
-        return doc_list
-    
+        dxy_list = dxy_search.query(query_dict['query'])
+        n_list = self._get_words(query_dict['query'])
+        top_list, rest_list = self._get_doc_from_index(n_list)
+        WriteLog('NOTICE', 'dxy size:%d, top size:%d, rest size:%d' % (len(dxy_list), len(top_list), len(rest_list)))
+        
+        return top_list + dxy_list + rest_list
+ 
     def _get_result(self, query):
         '''
         if query.find('query=') != -1:
@@ -57,8 +112,8 @@ class HYYSearcher(object):
         for p in parts:
             k, v = p.split('=')
             query_dict[k] = v
-        if not 'page' in query_dict:
-            query_dict['page'] = 1
+        if not 'query' in query_dict:
+            return []
         return self._get_query(query_dict)
 
     def GetSearchResult(self, hyy_search_request):
