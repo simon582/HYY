@@ -30,7 +30,7 @@ print 'create client successfully'
 
 request = ttypes.HyySearchRequest()
 request.qid = '123'
-request.data = 'query=医疗器械'
+request.data = 'query=医疗器械注册 解读'
 try:
     response = client.GetSearchResult(request)
     print response.qid
@@ -39,6 +39,7 @@ try:
         print doc.doc_id
         print doc.title
         print doc.detail_url
+        print doc.datetime
         print '-----------------'
 except:
     print 'refused'

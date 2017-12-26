@@ -55,10 +55,10 @@ class TestHTTPHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             query_dict['page'] = 1
         else:
             query_dict['page'] = int(query_dict['page'])
-        if not 'perpage' in query_dict:
-            query_dict['perpage'] = 10
+        if not 'per-page' in query_dict:
+            query_dict['per-page'] = 10
         else:
-            query_dict['perpage'] = int(query_dict['perpage'])
+            query_dict['per-page'] = int(query_dict['per-page'])
         try:
             response = self.client.GetSearchResult(request)
             print response.qid
@@ -66,8 +66,8 @@ class TestHTTPHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             res_dict = {}
             res_dict['total_size'] = len(response.doc_list)
             res_dict['doc_list'] = []
-            st = query_dict['perpage'] * (query_dict['page'] - 1)
-            ed = st + query_dict['perpage'] + 1
+            st = query_dict['per-page'] * (query_dict['page'] - 1)
+            ed = st + query_dict['per-page'] + 1
             for doc in response.doc_list[st:ed]:
                 docd = {}
                 docd['doc_id'] = doc.doc_id

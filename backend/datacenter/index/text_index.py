@@ -29,41 +29,57 @@ def handle_text(text):
             word_dict[word] = 1
     return word_dict
 
-cnt = 0
-for prod in hyy_db.work.find({}):
-    #print prod
-    doc_id = prod['doc_id']
-    text = prod['text'].replace('<p>','').replace('</p>','')
-    text_dict = handle_text(prod['text'])
-    title_dict = handle_text(prod['title'])
-    for word, word_cnt in title_dict.items():
-        if word in text_dict:
-            text_dict[word] += 100 * word_cnt
-        else:
-            text_dict[word] = 100 * word_cnt
+def main():
+    cnt = 0
+    for prod in hyy_db.temp.find({}):
+        #print prod
+        doc_id = prod['doc_id']
+        text = prod['text'].replace('<p>','').replace('</p>','')
+        text_dict = handle_text(prod['text'])
+        title_dict = handle_text(prod['title'])
+        for word, word_cnt in title_dict.items():
+            if word in text_dict:
+                text_dict[word] += 1000 + 10 * (word_cnt - 1)
+            else:
+                text_dict[word] = 1000 + 10 * (word_cnt - 1)
 
-    for prefix, word_cnt in text_dict.items():
-        resp = hyy_db.index.find_one({'prefix':prefix})
-        if resp:
-            # update
-            existed = False
-            for doc in resp['doc_list']:
-                if doc_id == doc[0]:
-                    existed = True
-                    break
-            if existed:
-                continue
-            resp['doc_list'].append((doc_id, word_cnt))
-            del(resp['_id'])
-            hyy_db.index.update({'prefix':prefix},{'$set':resp})
-        else:
-            # create
-            new_prod = {}
-            new_prod['prefix'] = prefix
-            new_prod['doc_list'] = [(doc_id, word_cnt)]
-            hyy_db.index.save(new_prod)
-    del(prod['_id'])
-    #hyy_db.work.save(prod)
-    #hyy_db.temp.remove(prod)
-    cnt += 1
-    print doc_id, cnt
+        for prefix, word_cnt in text_dict.items():
+            resp = hyy_db.index.find_one({'prefix':prefix})
+            if resp:
+                # update
+                existed = False
+                for doc in resp['doc_list']:
+                    if doc_id == doc[0]:
+                        existed = True
+                        break
+                if existed:
+                    continue
+                resp['doc_list'].append((doc_id, word_cnt))
+                del(resp['_id'])
+                hyy_db.index.update({'prefix':prefix},{'$set':resp})
+            else:
+                # create
+                new_prod = {}
+                new_prod['prefix'] = prefix
+                new_prod['doc_list'] = [(doc_id, word_cnt)]
+                hyy_db.index.save(new_prod)
+        del(prod['_id'])
+        try:
+            hyy_db.work.save(prod)
+        except Exception as e:
+            print e
+        try:
+            hyy_db.temp.remove({'doc_id':prod['doc_id']})
+        except Exception as e:
+            print e
+        cnt += 1
+        print doc_id, cnt
+
+if __name__ == "__main__":
+    main()
+    '''
+    text = '关于湖南省第二类医疗器械注册申请项目临床试验监督抽查有关情况的公告（湘食药监公告〔2016〕第33号）'
+    d = handle_text(text)
+    for k,v in d.items():
+        print k,v
+    '''

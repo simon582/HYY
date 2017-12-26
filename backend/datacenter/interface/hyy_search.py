@@ -46,7 +46,18 @@ class HYYSearcher(object):
         w_list = [w.word for w in type_words if len(w.word) > 1 and ('n' in w.flag or 'v' in w.flag)]
         return w_list
 
-    def _get_doc_from_index(self, word_list, topN=50):
+    def _handle_recent_value(self, datetime):
+
+        try:
+            pub_time = time.mktime(time.strptime(datetime, '%Y-%m-%d'))
+            delta_time = time.time() - pub_time
+            delta_days = delta_time / 3600 / 24
+            base = 365 * 2
+            return (base - delta_days) / base * 500
+        except:
+            return 0
+
+    def _get_doc_from_index(self, query, word_list, topN=50):
 
         stat_doc = {}
         for word in word_list:
@@ -56,11 +67,17 @@ class HYYSearcher(object):
             for doc in prod['doc_list']:
                 doc_id = doc[0]
                 doc_cnt = doc[1]
+                prod = self.hyy_db.work.find_one({'doc_id':doc_id})
                 if doc_id in stat_doc:
                     stat_doc[doc_id] += doc_cnt
+                    # 全字匹配
+                    if prod['title'].find(query) != -1:
+                        stat_doc[doc_id] += 1000
                 else:
-                    stat_doc[doc_id] = doc_cnt
+                    stat_doc[doc_id] = doc_cnt + self._handle_recent_value(prod['datetime'])
+                #print word, doc_id, stat_doc[doc_id]
         doc_list = sorted(stat_doc.iteritems(), key=lambda d:d[1], reverse=True)
+            
         top_list = []
         rest_list = [] 
         for doc_id, cnt in doc_list[:topN]:
@@ -75,7 +92,9 @@ class HYYSearcher(object):
             hyy_doc.source_desc = prod['source_desc']
             hyy_doc.detail_url = prod['detail_url']
             hyy_doc.text = prod['text'].encode('utf-8')
-            if stat_doc[prod['doc_id']] >= 100:
+            # for test
+            #print hyy_doc.title, hyy_doc.datetime, cnt
+            if stat_doc[prod['doc_id']] >= 1000:
                 top_list.append(hyy_doc)
             else:
                 rest_list.append(hyy_doc)
@@ -96,7 +115,9 @@ class HYYSearcher(object):
         '''
         dxy_list = dxy_search.query(query_dict['query'])
         n_list = self._get_words(query_dict['query'])
-        top_list, rest_list = self._get_doc_from_index(n_list)
+        top_list, rest_list = self._get_doc_from_index(query_dict['query'], n_list)
+        #top_list = sorted(top_list, key=lambda d:d.datetime, reverse=True)
+
         WriteLog('NOTICE', 'dxy size:%d, top size:%d, rest size:%d' % (len(dxy_list), len(top_list), len(rest_list)))
         
         return top_list + dxy_list + rest_list

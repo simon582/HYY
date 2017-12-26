@@ -32,7 +32,7 @@ print 'create client successfully'
 request = ttypes.CoreQueryRequest()
 request.qid = '123'
 #request.data = 'anca(+)'
-request.data = '转氨酶升高'
+request.data = '牙齿酸痛'
 #request.data = '带状疱疹存在哪些虚假医疗或过度诊疗的现象'
 #request.data = '克罗恩病存在哪些虚假医疗或过度诊疗的现象'
 #request.data = '拉肚子会是什么疾病呢'
